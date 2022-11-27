@@ -1,7 +1,9 @@
+use console::{style, Term};
 use rand::Rng;
 use std::io::{self, Write};
 use std::process::Command;
 use std::process::Stdio;
+use std::time::{Duration, Instant};
 use std::{fs, fs::File};
 
 fn fuzz(tmpfname: &str) -> Result<bool, io::Error> {
@@ -53,12 +55,22 @@ fn main() -> io::Result<()> {
     let mut n_runs = 0;
     let mut n_crashes = 0;
     const BATCH_SIZE: usize = 100;
-    const BATCHES: usize = BATCH_SIZE * 20000;
+    const BATCHES: usize = 2_000_000_000;
+    let start = Instant::now();
 
+    let term = Term::stdout();
     for _ in 0..BATCHES {
         n_runs = n_runs + 1;
-        if n_runs % 100 == 0 {
-            print!("Crashes: {}\n", n_crashes);
+        if n_runs % BATCH_SIZE == 0 {
+            let duration = start.elapsed();
+            term.write_line(
+                &format!(
+                    "Crashes: {}, fcps: {}",
+                    style(n_crashes).cyan(),
+                    style(n_runs as f64 / (duration.as_millis() as f64 / 1000.0)).cyan()
+                )[..],
+            )?;
+            term.move_cursor_up(1)?;
         }
 
         if fuzz(generate_input_file(&corpse)?)? {
