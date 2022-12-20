@@ -15,10 +15,8 @@ fn fuzz(tmpfname: &str) -> Result<bool, io::Error> {
         .spawn()?
         .wait()?;
 
-    match status.code() {
-        Some(_) => return Ok(false),
-        None => return Ok(true),
-    };
+    // "On Unix, this will return None if the process was terminated by a signal"
+    Ok(status.code().is_none())
 }
 
 fn generate_input_file(corpse: &Vec<Vec<u8>>) -> Result<&str, io::Error> {
